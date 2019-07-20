@@ -1,18 +1,18 @@
 package gin_oidc
 
 import (
-	"github.com/gin-gonic/gin"
-	"log"
-	"time"
-	"math/rand"
-	"github.com/gin-contrib/sessions"
 	"context"
-	"github.com/coreos/go-oidc"
-	"golang.org/x/oauth2"
+	"encoding/json"
 	"errors"
+	"github.com/coreos/go-oidc"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
+	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
-	"encoding/json"
+	"time"
 )
 
 type InitParams struct {
@@ -68,7 +68,7 @@ func logoutHandler(i InitParams) func(c *gin.Context) {
 		serverSession.Save()
 		logoutUrl := i.Issuer
 		logoutUrl.RawQuery = (url.Values{"redirect_uri": []string{i.PostLogoutUrl.String()}}).Encode()
-		logoutUrl.Path = "protocol/openid-connect/logout"
+		logoutUrl.Path = i.Issuer.Path + "/protocol/openid-connect/logout"
 		c.Redirect(http.StatusFound, logoutUrl.String())
 	}
 }
@@ -137,7 +137,7 @@ func protectMiddleware(config *oauth2.Config) func(c *gin.Context) {
 		serverSession := sessions.Default(c)
 		authorized := serverSession.Get("oidcAuthorized")
 		if (authorized != nil && authorized.(bool)) ||
-			c.Request.URL.Path ==  "oidc-callback" {
+			c.Request.URL.Path == "oidc-callback" {
 			c.Next()
 			return
 		}
